@@ -1,0 +1,12 @@
+# frozen_string_literal: true
+
+MkdocsRails::Config.setup do |config|
+  # Where your mkdocs project lives
+  config.docs_root = Rails.root.join("docs")
+
+  # Port for local dev server (default: 8000)
+  config.port = 8000
+
+  # Enable/disable the docs (default: true in development/test)
+  # config.enabled = Rails.env.development? || Rails.env.test?
+end

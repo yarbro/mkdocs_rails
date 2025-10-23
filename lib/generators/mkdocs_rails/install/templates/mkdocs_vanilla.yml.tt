@@ -1,0 +1,14 @@
+site_name: <%= app_name %> Documentation
+site_description: Documentation for <%= app_name %>
+
+theme:
+  name: mkdocs
+
+markdown_extensions:
+  - admonition
+  - codehilite
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md

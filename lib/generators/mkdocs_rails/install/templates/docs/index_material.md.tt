@@ -1,0 +1,48 @@
+# Welcome to <%= app_name %> Documentation
+
+Welcome! This is your documentation powered by Material for MkDocs.
+
+## Getting Started
+
+Edit this file at `docs/docs/index.md` to customize your documentation.
+
+## Features
+
+- 🎨 Beautiful Material Design theme
+- 🌓 Dark/light mode toggle
+- 🔍 Instant search
+- 📱 Mobile responsive
+- 💻 Syntax highlighting
+
+## Quick Links
+
+- [MkDocs Documentation](https://www.mkdocs.org/)
+- [Material for MkDocs](https://squidfunk.github.io/mkdocs-material/)
+
+## Adding More Pages
+
+Create new markdown files in `docs/docs/` and add them to the navigation in `docs/mkdocs.yml`.
+```yaml
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - API Reference: api.md
+```
+
+## Code Examples
+```ruby
+# Example Ruby code
+class User < ApplicationRecord
+  has_many :posts
+  validates :email, presence: true
+end
+```
+
+!!! tip "Pro Tip"
+    Use admonitions to highlight important information!
+
+!!! warning "Warning"
+    This is a warning admonition.
+
+!!! info "Information"
+    This is an info admonition.

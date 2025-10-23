@@ -1,0 +1,30 @@
+# Welcome to <%= app_name %> Documentation
+
+Welcome! This is your documentation powered by MkDocs.
+
+## Getting Started
+
+Edit this file at `docs/docs/index.md` to customize your documentation.
+
+## Adding More Pages
+
+Create new markdown files in `docs/docs/` and add them to the navigation in `docs/mkdocs.yml`.
+```yaml
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - API Reference: api.md
+```
+
+## Code Examples
+```ruby
+# Example Ruby code
+class User < ApplicationRecord
+  has_many :posts
+  validates :email, presence: true
+end
+```
+
+## Resources
+
+- [MkDocs Documentation](https://www.mkdocs.org/)

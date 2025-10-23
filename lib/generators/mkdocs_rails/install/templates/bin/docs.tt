@@ -1,0 +1,93 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "fileutils"
+
+DOCS_DIR = File.expand_path("../docs", __dir__)
+PROJECT_ROOT = File.expand_path("..", __dir__)
+VENV_DIR = File.join(PROJECT_ROOT, ".python-venv")
+
+def mkdocs_command
+  # Check .python-venv first
+  venv_mkdocs = File.join(VENV_DIR, "bin", "mkdocs")
+  return venv_mkdocs if File.exist?(venv_mkdocs)
+
+  # Fall back to system mkdocs
+  "mkdocs"
+end
+
+def mkdocs_available?
+  system("#{mkdocs_command} --version > /dev/null 2>&1")
+end
+
+def run_command(cmd)
+  Dir.chdir(DOCS_DIR) do
+    system("#{mkdocs_command} #{cmd}") || exit(1)
+  end
+end
+
+case ARGV[0]
+when "setup"
+  puts "Setting up MkDocs..."
+
+  # Create .python-venv if it doesn't exist
+  unless Dir.exist?(VENV_DIR)
+    puts "Creating Python virtual environment..."
+    system("python3 -m venv #{VENV_DIR}") || exit(1)
+  end
+
+  # Install mkdocs-material
+  puts "Installing mkdocs-material..."
+  pip_cmd = File.join(VENV_DIR, "bin", "pip")
+  system("#{pip_cmd} install mkdocs-material") || exit(1)
+
+  puts "\n✓ MkDocs setup complete!"
+  puts "\nNext steps:"
+  puts "  bin/docs serve    # Start the dev server"
+
+when "serve", "s"
+  unless mkdocs_available?
+    puts "MkDocs is not installed. Run: bin/docs setup"
+    exit(1)
+  end
+
+  puts "Starting MkDocs server..."
+  run_command("serve")
+
+when "build", "b"
+  unless mkdocs_available?
+    puts "MkDocs is not installed. Run: bin/docs setup"
+    exit(1)
+  end
+
+  puts "Building documentation..."
+  run_command("build")
+
+when "new"
+  page_name = ARGV[1]
+  if page_name.nil?
+    puts "Usage: bin/docs new PAGE_NAME"
+    exit(1)
+  end
+
+  file_path = File.join(DOCS_DIR, "docs", "#{page_name}.md")
+  File.write(file_path, "# #{page_name.split(/[-_]/).map(&:capitalize).join(" ")}\n\nYour content here.\n")
+  puts "Created #{file_path}"
+
+when "clean"
+  puts "Cleaning build directory..."
+  FileUtils.rm_rf(File.join(DOCS_DIR, "site"))
+  puts "Done!"
+
+else
+  puts <<~HELP
+    MkDocs Rails Helper
+
+    Usage:
+      bin/docs setup       Install MkDocs (first time only)
+      bin/docs serve       Start the development server
+      bin/docs build       Build static documentation
+      bin/docs new PAGE    Create a new documentation page
+      bin/docs clean       Remove build directory
+  HELP
+end
