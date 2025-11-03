@@ -1,8 +1,16 @@
 site_name: <%= app_name %> Documentation
 site_description: Documentation for <%= app_name %>
 
+# Uncomment to link to your repository
+# repo_name: username/repo
+# repo_url: https://github.com/username/repo
+# edit_uri: edit/main/docs/
+
 theme:
   name: material
+  # Uncomment to customize branding
+  # logo: assets/logo.png
+  # favicon: assets/favicon.png
   palette:
     # Light mode
     - scheme: default
@@ -40,6 +48,9 @@ markdown_extensions:
   - attr_list
   - md_in_html
 
+# Plugins are auto-installed by bin/docs setup
+# Most plugins follow the convention: mkdocs-{name}-plugin
+# For custom mappings, create docs/.mkdocs-packages
 plugins:
   - search
 

@@ -1,14 +1,28 @@
 site_name: <%= app_name %> Documentation
 site_description: Documentation for <%= app_name %>
 
+# Uncomment to link to your repository
+# repo_name: username/repo
+# repo_url: https://github.com/username/repo
+# edit_uri: edit/main/docs/
+
 theme:
   name: mkdocs
 
 markdown_extensions:
   - admonition
-  - codehilite
+  - codehilite:
+      guess_lang: false
   - toc:
       permalink: true
+  - tables
+  - fenced_code
+
+# Plugins are auto-installed by bin/docs setup
+# Most plugins follow the convention: mkdocs-{name}-plugin
+# For custom mappings, create docs/.mkdocs-packages
+plugins:
+  - search
 
 nav:
   - Home: index.md

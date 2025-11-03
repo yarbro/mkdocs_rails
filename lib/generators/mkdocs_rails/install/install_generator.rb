@@ -1,50 +1,36 @@
 # frozen_string_literal: true
 
-require "rails/generators"
-
 module MkdocsRails
   class InstallGenerator < Rails::Generators::Base
     source_root File.expand_path("templates", __dir__)
 
-    class_option :theme,
-                 type: :string,
-                 default: "material",
-                 desc: "MkDocs theme to use (material or mkdocs)"
-
     class_option :vanilla,
                  type: :boolean,
                  default: false,
-                 desc: "Use vanilla MkDocs instead of Material"
+                 desc: "Use vanilla MkDocs instead of Material for MkDocs"
 
-    def create_docs_directory
-      empty_directory "docs/docs"
-    end
-
-    def update_gitignore
-      append_to_file ".gitignore", "\n# MkDocs Python virtual environment\n.python-venv/\n"
+    # TODO: Make this configurable
+    def create_docs_structure
+      empty_directory "docs"
     end
 
     def copy_mkdocs_config
-      if use_material?
-        template "mkdocs_material.yml.tt", "docs/mkdocs.yml"
-        template "docs/index_material.md.tt", "docs/docs/index.md"
-      else
+      if options[:vanilla]
         template "mkdocs_vanilla.yml.tt", "docs/mkdocs.yml"
-        template "docs/index_vanilla.md.tt", "docs/docs/index.md"
+        template "docs/index_vanilla.md.tt", "docs/index.md"
+      else
+        template "mkdocs_material.yml.tt", "docs/mkdocs.yml"
+        template "docs/index_material.md.tt", "docs/index.md"
       end
+    end
+
+    def copy_package_mapping_template
+      template "mkdocs-packages.tt", "docs/.mkdocs-packages"
     end
 
     def copy_bin_script
       template "bin/docs.tt", "bin/docs"
       chmod "bin/docs", 0o755
-    end
-
-    def create_initializer
-      template "mkdocs_rails.rb.tt", "config/initializers/mkdocs_rails.rb"
-    end
-
-    def add_route
-      route "  constraints subdomain: 'docs' do\n    mount MkdocsRails::Engine, at: '/'\n  end"
     end
 
     def show_instructions
@@ -53,26 +39,15 @@ module MkdocsRails
       say "\n"
       say "Next steps:", :yellow
       say "  1. Run setup: bin/docs setup"
-      say "  2. Start docs server: bin/docs serve"
-      say "  3. Start Rails: rails server"
-      say "  4. Visit: http://docs.lvh.me:3000"
-      say "\n"
-      say "Note: MkDocs Rails uses a subdomain (docs.lvh.me:3000)", :cyan
+      say "  2. Start docs: bin/docs serve"
+      say "  3. Visit: http://localhost:8000"
       say "\n"
     end
 
     private
 
-    def use_material?
-      !options[:vanilla] && (options[:theme] == "material")
-    end
-
     def theme_name
-      use_material? ? "Material for MkDocs" : "MkDocs"
-    end
-
-    def pip_packages
-      use_material? ? "mkdocs-material" : "mkdocs"
+      options[:vanilla] ? "MkDocs" : "Material for MkDocs"
     end
 
     def app_name

@@ -1,0 +1,18 @@
+# Custom package mappings for MkDocs plugins
+# Only needed if a plugin doesn't follow the mkdocs-{name}-plugin convention
+#
+# Format:
+#   plugin-name: package-name
+#
+# Example:
+#   If your mkdocs.yml has:
+#     plugins:
+#       - awesome-pages
+#
+#   And the package name is mkdocs-awesome-pages-plugin, add:
+#     plugins:
+#       awesome-pages: mkdocs-awesome-pages-plugin
+#
+# After adding mappings here, run: bin/docs setup
+
+plugins: {}

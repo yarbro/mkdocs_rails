@@ -2,77 +2,133 @@
 # frozen_string_literal: true
 
 require "fileutils"
+require "yaml"
 
 DOCS_DIR = File.expand_path("../docs", __dir__)
 PROJECT_ROOT = File.expand_path("..", __dir__)
 VENV_DIR = File.join(PROJECT_ROOT, ".python-venv")
+MKDOCS_CONFIG = File.join(DOCS_DIR, "mkdocs.yml")
+GITIGNORE_PATH = File.join(PROJECT_ROOT, ".gitignore")
+PACKAGES_FILE = File.join(DOCS_DIR, ".mkdocs-packages")
 
 def mkdocs_command
-  # Check .python-venv first
   venv_mkdocs = File.join(VENV_DIR, "bin", "mkdocs")
-  return venv_mkdocs if File.exist?(venv_mkdocs)
-
-  # Fall back to system mkdocs
-  "mkdocs"
+  File.exist?(venv_mkdocs) ? venv_mkdocs : "mkdocs"
 end
 
-def mkdocs_available?
-  system("#{mkdocs_command} --version > /dev/null 2>&1")
+def pip_command
+  venv_pip = File.join(VENV_DIR, "bin", "pip")
+  File.exist?(venv_pip) ? venv_pip : "pip3"
 end
 
-def run_command(cmd)
+def venv_exists?
+  Dir.exist?(VENV_DIR) && File.exist?(File.join(VENV_DIR, "bin", "python"))
+end
+
+def update_gitignore
+  return unless File.exist?(GITIGNORE_PATH)
+  return if File.read(GITIGNORE_PATH).include?(".python-venv")
+
+  File.open(GITIGNORE_PATH, "a") do |f|
+    f.puts "\n# MkDocs Python virtual environment"
+    f.puts ".python-venv/"
+  end
+
+  puts "Added .python-venv/ to .gitignore"
+end
+
+def load_custom_mappings
+  return {} unless File.exist?(PACKAGES_FILE)
+
+  config = YAML.load_file(PACKAGES_FILE)
+  config["plugins"] || {}
+rescue StandardError => e
+  puts "Warning: Could not parse .mkdocs-packages: #{e.message}"
+  {}
+end
+
+def detect_required_packages
+  return ["mkdocs-material"] unless File.exist?(MKDOCS_CONFIG)
+
+  config = YAML.load_file(MKDOCS_CONFIG)
+
+  # Detect theme package
+  theme = config.dig("theme", "name") || config["theme"]
+  theme_package = theme == "material" ? "mkdocs-material" : "mkdocs"
+
+  # Detect plugin packages
+  plugins = config.dig("plugins") || []
+  custom_mappings = load_custom_mappings
+
+  plugin_packages = plugins.map do |plugin|
+    plugin_name = plugin.is_a?(Hash) ? plugin.keys.first : plugin
+    next if plugin_name == "search" # Built-in
+
+    custom_mappings[plugin_name] || "mkdocs-#{plugin_name}-plugin"
+  end.compact
+
+  [theme_package] + plugin_packages
+rescue StandardError => e
+  puts "Warning: Could not parse mkdocs.yml: #{e.message}"
+  ["mkdocs-material"]
+end
+
+def package_installed?(package)
+  base_package = package.split("[").first
+  system("#{pip_command} show #{base_package} > /dev/null 2>&1")
+end
+
+def install_packages(packages)
+  return if packages.empty?
+
+  puts "Installing: #{packages.join(", ")}"
+  system("#{pip_command} install #{packages.join(" ")}") || exit(1)
+end
+
+def setup_mkdocs
+  puts "Setting up MkDocs..."
+
+  unless venv_exists?
+    puts "Creating Python virtual environment..."
+    system("python3 -m venv #{VENV_DIR}") || exit(1)
+    update_gitignore
+  end
+
+  required = detect_required_packages
+  missing = required.reject { |pkg| package_installed?(pkg) }
+
+  if missing.empty?
+    puts "✓ All packages already installed!"
+  else
+    install_packages(missing)
+  end
+
+  puts "\n✓ MkDocs setup complete!"
+  puts "\nInstalled packages:"
+  required.each { |pkg| puts "  - #{pkg}" }
+end
+
+def run_mkdocs(command)
   Dir.chdir(DOCS_DIR) do
-    system("#{mkdocs_command} #{cmd}") || exit(1)
+    system("#{mkdocs_command} #{command}") || exit(1)
   end
 end
 
 case ARGV[0]
 when "setup"
-  puts "Setting up MkDocs..."
-
-  # Create .python-venv if it doesn't exist
-  unless Dir.exist?(VENV_DIR)
-    puts "Creating Python virtual environment..."
-    system("python3 -m venv #{VENV_DIR}") || exit(1)
-  end
-
-  # Install mkdocs-material
-  puts "Installing mkdocs-material..."
-  pip_cmd = File.join(VENV_DIR, "bin", "pip")
-  system("#{pip_cmd} install mkdocs-material") || exit(1)
-
-  puts "\n✓ MkDocs setup complete!"
-  puts "\nNext steps:"
-  puts "  bin/docs serve    # Start the dev server"
+  setup_mkdocs
 
 when "serve", "s"
-  unless mkdocs_available?
-    puts "MkDocs is not installed. Run: bin/docs setup"
-    exit(1)
-  end
+  # Auto-install any new plugins before serving
+  missing = detect_required_packages.reject { |pkg| package_installed?(pkg) }
+  install_packages(missing) unless missing.empty?
 
   puts "Starting MkDocs server..."
-  run_command("serve")
+  run_mkdocs("serve")
 
 when "build", "b"
-  unless mkdocs_available?
-    puts "MkDocs is not installed. Run: bin/docs setup"
-    exit(1)
-  end
-
   puts "Building documentation..."
-  run_command("build")
-
-when "new"
-  page_name = ARGV[1]
-  if page_name.nil?
-    puts "Usage: bin/docs new PAGE_NAME"
-    exit(1)
-  end
-
-  file_path = File.join(DOCS_DIR, "docs", "#{page_name}.md")
-  File.write(file_path, "# #{page_name.split(/[-_]/).map(&:capitalize).join(" ")}\n\nYour content here.\n")
-  puts "Created #{file_path}"
+  run_mkdocs("build")
 
 when "clean"
   puts "Cleaning build directory..."
@@ -84,10 +140,13 @@ else
     MkDocs Rails Helper
 
     Usage:
-      bin/docs setup       Install MkDocs (first time only)
+      bin/docs setup       Install MkDocs and plugins
       bin/docs serve       Start the development server
       bin/docs build       Build static documentation
-      bin/docs new PAGE    Create a new documentation page
       bin/docs clean       Remove build directory
+
+    Plugin Detection:
+      Plugins are auto-detected from mkdocs.yml and auto-installed.
+      Custom package mappings can be added to docs/.mkdocs-packages
   HELP
 end

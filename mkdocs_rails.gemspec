@@ -8,8 +8,8 @@ Gem::Specification.new do |spec|
   spec.authors = ["David Yarbro"]
   spec.email = ["david@yarb.ro"]
 
-  spec.summary = "MkDocs integration for Rails applications"
-  spec.description = "Integrate beautiful MkDocs documentation into your Rails app with Material theme"
+  spec.summary = "Easy MkDocs setup for Rails development"
+  spec.description = "Add Material for MkDocs documentation to your Rails app with generators and helpful scripts"
   spec.homepage = "https://github.com/yarbro/mkdocs_rails"
   spec.license = "MIT"
   spec.required_ruby_version = ">= 3.2.0"
