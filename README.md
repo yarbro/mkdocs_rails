@@ -22,20 +22,27 @@ rails generate mkdocs_rails:install
 ## Usage
 
 ```bash
-# First time setup (installs Python packages)
+# First-time setup (creates a local Python venv and installs packages)
 bin/docs setup
 
-# Start the docs server
+# Start the MkDocs development server
 bin/docs serve
-
 # Visit http://localhost:8000
 
-# Build static docs
-bin/docs build
+# Build static docs directly into Rails public/docs
+bin/docs publish
 
-# Clean build directory
+# Clean the public/docs directory
 bin/docs clean
 ```
+
+The publish command outputs a production-ready static site to `public/docs`, automatically served by Rails at:
+
+```bash
+http://localhost:3000/docs/
+```
+
+The trailing slash (/) is required for the static docs to display correctly.
 
 ## Features
 
