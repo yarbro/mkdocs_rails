@@ -16,10 +16,10 @@ module MkdocsRails
 
     def copy_mkdocs_config
       if options[:vanilla]
-        template "mkdocs_vanilla.yml.tt", "docs/mkdocs.yml"
+        template "mkdocs_vanilla.yml.tt", "mkdocs.yml"
         template "docs/index_vanilla.md.tt", "docs/index.md"
       else
-        template "mkdocs_material.yml.tt", "docs/mkdocs.yml"
+        template "mkdocs_material.yml.tt", "mkdocs.yml"
         template "docs/index_material.md.tt", "docs/index.md"
       end
     end

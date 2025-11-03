@@ -6,8 +6,9 @@ require "yaml"
 
 DOCS_DIR = File.expand_path("../docs", __dir__)
 PROJECT_ROOT = File.expand_path("..", __dir__)
+PUBLIC_DOCS_DIR = File.join(PROJECT_ROOT, "public", "docs")
 VENV_DIR = File.join(PROJECT_ROOT, ".python-venv")
-MKDOCS_CONFIG = File.join(DOCS_DIR, "mkdocs.yml")
+MKDOCS_CONFIG = File.join(PROJECT_ROOT, "mkdocs.yml")
 GITIGNORE_PATH = File.join(PROJECT_ROOT, ".gitignore")
 PACKAGES_FILE = File.join(DOCS_DIR, ".mkdocs-packages")
 
@@ -133,7 +134,7 @@ def setup_mkdocs
 end
 
 def run_mkdocs(command)
-  Dir.chdir(DOCS_DIR) do
+  Dir.chdir(PROJECT_ROOT) do
     system("#{mkdocs_command} #{command}") || exit(1)
   end
 end
@@ -150,13 +151,14 @@ when "serve", "s"
   puts "Starting MkDocs server..."
   run_mkdocs("serve")
 
-when "build", "b"
-  puts "Building documentation..."
-  run_mkdocs("build")
+when "publish", "p"
+  FileUtils.mkdir_p(PUBLIC_DOCS_DIR)
+  puts "Publishing documentation to #{PUBLIC_DOCS_DIR}..."
+  run_mkdocs("build -d #{PUBLIC_DOCS_DIR}")
 
 when "clean"
   puts "Cleaning build directory..."
-  FileUtils.rm_rf(File.join(DOCS_DIR, "site"))
+  FileUtils.rm_rf(File.join(PUBLIC_DOCS_DIR))
   puts "Done!"
 
 else
@@ -166,8 +168,8 @@ else
     Usage:
       bin/docs setup       Install MkDocs and plugins
       bin/docs serve       Start the development server
-      bin/docs build       Build static documentation
-      bin/docs clean       Remove build directory
+      bin/docs publish     Publish documentation to public directory
+      bin/docs clean       Remove public docs directory
 
     Plugin Detection:
       Plugins are auto-detected from mkdocs.yml and auto-installed.
