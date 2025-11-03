@@ -57,8 +57,14 @@ rescue StandardError => e
 end
 
 def detect_theme_package(config)
-  theme = config.dig("theme", "name") || config["theme"]
-  theme == "material" ? "mkdocs-material" : "mkdocs"
+  theme_field = config["theme"]
+  theme_name =
+    if theme_field.is_a?(Hash)
+      theme_field["name"]
+    else
+      theme_field
+    end
+  theme_name == "material" ? "mkdocs-material" : "mkdocs"
 end
 
 def detect_plugin_packages(config, custom_mappings)
