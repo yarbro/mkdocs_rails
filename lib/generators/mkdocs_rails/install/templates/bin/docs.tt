@@ -47,30 +47,40 @@ rescue StandardError => e
   {}
 end
 
-def detect_required_packages
-  return ["mkdocs-material"] unless File.exist?(MKDOCS_CONFIG)
+def load_mkdocs_config
+  return {} unless File.exist?(MKDOCS_CONFIG)
 
-  config = YAML.load_file(MKDOCS_CONFIG)
+  YAML.load_file(MKDOCS_CONFIG)
+rescue StandardError => e
+  puts "Warning: Could not parse mkdocs.yml: #{e.message}"
+  {}
+end
 
-  # Detect theme package
+def detect_theme_package(config)
   theme = config.dig("theme", "name") || config["theme"]
-  theme_package = theme == "material" ? "mkdocs-material" : "mkdocs"
+  theme == "material" ? "mkdocs-material" : "mkdocs"
+end
 
-  # Detect plugin packages
-  plugins = config.dig("plugins") || []
-  custom_mappings = load_custom_mappings
+def detect_plugin_packages(config, custom_mappings)
+  plugins = config["plugins"] || []
 
-  plugin_packages = plugins.map do |plugin|
+  plugins.map do |plugin|
     plugin_name = plugin.is_a?(Hash) ? plugin.keys.first : plugin
     next if plugin_name == "search" # Built-in
 
     custom_mappings[plugin_name] || "mkdocs-#{plugin_name}-plugin"
   end.compact
+end
+
+def detect_required_packages
+  config = load_mkdocs_config
+  return ["mkdocs-material"] if config.empty?
+
+  theme_package = detect_theme_package(config)
+  custom_mappings = load_custom_mappings
+  plugin_packages = detect_plugin_packages(config, custom_mappings)
 
   [theme_package] + plugin_packages
-rescue StandardError => e
-  puts "Warning: Could not parse mkdocs.yml: #{e.message}"
-  ["mkdocs-material"]
 end
 
 def package_installed?(package)
@@ -85,15 +95,15 @@ def install_packages(packages)
   system("#{pip_command} install #{packages.join(" ")}") || exit(1)
 end
 
-def setup_mkdocs
-  puts "Setting up MkDocs..."
+def create_venv_if_missing
+  return if venv_exists?
 
-  unless venv_exists?
-    puts "Creating Python virtual environment..."
-    system("python3 -m venv #{VENV_DIR}") || exit(1)
-    update_gitignore
-  end
+  puts "Creating Python virtual environment..."
+  system("python3 -m venv #{VENV_DIR}") || exit(1)
+  update_gitignore
+end
 
+def install_missing_packages
   required = detect_required_packages
   missing = required.reject { |pkg| package_installed?(pkg) }
 
@@ -102,10 +112,18 @@ def setup_mkdocs
   else
     install_packages(missing)
   end
+  required
+end
+
+def setup_mkdocs
+  puts "Setting up MkDocs..."
+
+  create_venv_if_missing
+  installed_packages = install_missing_packages
 
   puts "\n✓ MkDocs setup complete!"
   puts "\nInstalled packages:"
-  required.each { |pkg| puts "  - #{pkg}" }
+  installed_packages.each { |pkg| puts "  - #{pkg}" }
 end
 
 def run_mkdocs(command)
